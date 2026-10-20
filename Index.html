@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QC Management Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#FAF6F1;--card:#FFFFFF;--line:#EEE6DC;--ink:#211C17;--mute:#7B7068;
+  --brand:#CF6136;--brand2:#B4502A;--brandSoft:#FBEDE5;
+  --green:#16A34A;--greenSoft:#E6F5EB;--amber:#F29D0B;--amberSoft:#FEF2DA;
+  --red:#DC2626;--redSoft:#FDE7E7;--blue:#2F6BE8;--blueSoft:#E7EEFD;
+  --r:14px;--sh:0 1px 2px rgba(70,45,20,.04),0 6px 18px rgba(70,45,20,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* sidebar */
+aside{background:#fff;border-right:1px solid var(--line);padding:14px 12px;position:sticky;top:0;height:100vh;overflow:auto;z-index:30}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 18px}
+.brand b{font-size:21px;display:block;line-height:1.1}
+.brand small{color:var(--mute);font-size:11.5px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:#3E352D;text-decoration:none;cursor:pointer;margin-bottom:2px;font-weight:500}
+.nav a:hover{background:var(--brandSoft)}
+.nav a.active{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(207,97,54,.28)}
+.nav svg{width:19px;height:19px;flex:none}
+.nav hr{border:0;border-top:1px solid var(--line);margin:12px 8px}
+.badge{margin-left:auto;background:var(--red);color:#fff;border-radius:99px;font-size:11px;min-width:19px;height:19px;display:grid;place-items:center;padding:0 5px}
+.scrim{display:none}
+
+/* main */
+main{min-width:0;padding:0 26px 30px}
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 0;position:sticky;top:0;background:var(--bg);z-index:20}
+.menuBtn{display:none;border:0;background:#fff;border-radius:10px;width:40px;height:40px;place-items:center;box-shadow:var(--sh);cursor:pointer}
+.topbar .grow{flex:1}
+.iconBtn{position:relative;border:0;background:transparent;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;border-radius:10px}
+.iconBtn:hover{background:#fff}
+.dot{position:absolute;top:8px;right:9px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--bg)}
+.user{display:flex;align-items:center;gap:10px}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:600}
+.user b{display:block;font-size:14px;line-height:1.2}.user small{color:var(--mute);font-size:12px}
+
+.pageHead{display:flex;align-items:flex-end;gap:12px;margin:4px 0 16px;flex-wrap:wrap}
+.pageHead h1{font-size:30px;margin:0;line-height:1.15;letter-spacing:-.01em}
+.pageHead p{margin:2px 0 0;color:var(--mute);font-size:16px}
+.pageHead .grow{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;background:#F1EAE2;color:#5b5047;border-radius:10px;padding:7px 12px;font-size:13px}
+
+.filters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.field{position:relative;display:flex;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 12px;min-height:44px;box-shadow:var(--sh)}
+.field svg{width:18px;height:18px;color:#6b5f56;flex:none}
+.field input,.field select{border:0;background:transparent;outline:none;flex:1;padding:10px 8px;min-width:0;appearance:none;cursor:pointer}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px}
+.cardHead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cardHead h3{margin:0;font-size:17px}
+.cardHead .grow{flex:1}
+.cardHead > span[data-ic]{color:var(--brand)}
+.link{color:var(--brand);font-weight:600;cursor:pointer;background:none;border:0;padding:0;font-size:13.5px}
+.link:hover{text-decoration:underline}
+
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px}
+.kpi{display:flex;gap:16px;align-items:center}
+.kpi .ico{width:72px;height:72px;border-radius:14px;display:grid;place-items:center;flex:none}
+.kpi .ico svg{width:34px;height:34px}
+.kpi label{font-weight:600;font-size:15px;display:block}
+.kpi .val{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.kpi .num{font-size:36px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.delta{font-size:13px;line-height:1.25;color:var(--mute)}
+.delta b{display:block;font-weight:600}
+.up{color:var(--green)}.down{color:var(--red)}
+.up-bad{color:var(--red)}.down-good{color:var(--green)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid21{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;margin-top:14px}
+.chartBox{position:relative;height:240px}
+.mini{border:1px solid var(--line);border-radius:10px;background:#fff;padding:6px 10px;font-size:13px;cursor:pointer}
+
+.donutWrap{display:flex;align-items:center;gap:22px}
+.donut{position:relative;width:170px;height:170px;flex:none}
+.donut .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none}
+.donut .center b{font-size:22px;display:block;line-height:1}
+.donut .center small{color:var(--mute)}
+.legend div{display:flex;gap:10px;margin:8px 0;align-items:flex-start}
+.legend i{width:13px;height:13px;border-radius:50%;margin-top:5px;flex:none}
+.legend b{display:block}
+
+table{width:100%;border-collapse:collapse}
+.tableWrap{overflow-x:auto;margin:0 -18px -18px}
+th{background:#FBF7F2;text-align:left;font-weight:600;color:#4E443B;font-size:13.5px;padding:11px 14px;white-space:nowrap;border-top:1px solid var(--line)}
+td{padding:11px 14px;border-top:1px solid var(--line);white-space:nowrap}
+tr:hover td{background:#FFFCF8}
+.tag{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 12px 3px 6px;font-size:13px;font-weight:500}
+.tag svg{width:16px;height:16px}
+.tag.Pass{background:var(--greenSoft);color:#137A3A}
+.tag.Hold{background:var(--amberSoft);color:#A2640A}
+.tag.Reject{background:var(--redSoft);color:#B42323}
+.tag.Open{background:var(--redSoft);color:#B42323;padding-left:12px}
+.tag.Inprogress{background:var(--amberSoft);color:#A2640A;padding-left:12px}
+.tag.Closed{background:var(--greenSoft);color:#137A3A;padding-left:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;border:1px solid transparent;padding:9px 16px;font-weight:600;cursor:pointer;background:var(--brand);color:#fff}
+.btn:hover{background:var(--brand2)}
+.btn svg{width:18px;height:18px}
+.btn.ghost{background:#fff;border-color:#E7C9B9;color:var(--brand)}
+.btn.ghost:hover{background:var(--brandSoft)}
+.btn.sm{padding:5px 14px;font-size:13px}
+.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.amber{background:var(--amber)}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn.block{width:100%;padding:13px}
+
+/* automation */
+.rule{display:grid;grid-template-columns:44px 1.1fr 22px 1.2fr auto;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.rule:first-of-type{border-top:0}
+.rule .ri{width:44px;height:44px;border-radius:10px;display:grid;place-items:center}
+.rule .ri svg{width:22px;height:22px}
+.rule b{font-size:13.5px}
+.rule small{color:var(--mute);font-size:12.5px}
+.state{display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;border:0}
+.state.on{background:var(--greenSoft);color:#137A3A}
+.state.off{background:#F2EEE9;color:#7B7068}
+.state.sched{background:var(--blueSoft);color:var(--blue)}
+.noti{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:flex-start}
+.noti:first-child{border-top:0}
+.noti .ni{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none}
+.noti .ni svg{width:17px;height:17px}
+.noti b{font-size:13.5px;display:block}
+.noti small{color:var(--mute);font-size:12px}
+.noti time{margin-left:auto;color:var(--mute);font-size:12px;white-space:nowrap}
+.assistant{display:flex;gap:14px;align-items:flex-start}
+.assistant p{color:var(--mute);font-size:13px;margin:6px 0 12px}
+
+/* forms */
+.form{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 16px}
+.form .full{grid-column:1/-1}
+.form label{display:block;font-weight:600;font-size:13.5px;margin-bottom:6px}
+.form input,.form select,.form textarea{width:100%;border:1px solid #E3D9CE;border-radius:10px;padding:10px 12px;background:#fff;outline:none}
+.form input:focus,.form select:focus,.form textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brandSoft)}
+.form textarea{min-height:90px;resize:vertical}
+.hint{color:var(--mute);font-size:12.5px;margin-top:4px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{flex:1;min-width:90px;border:1.5px solid #E3D9CE;background:#fff;border-radius:10px;padding:10px;cursor:pointer;font-weight:600;display:flex;gap:6px;justify-content:center;align-items:center}
+.seg button svg{width:18px;height:18px}
+.seg button.on.Pass{border-color:var(--green);background:var(--greenSoft);color:#137A3A}
+.seg button.on.Hold{border-color:var(--amber);background:var(--amberSoft);color:#A2640A}
+.seg button.on.Reject{border-color:var(--red);background:var(--redSoft);color:#B42323}
+.seg button.on.stage{border-color:var(--brand);background:var(--brandSoft);color:var(--brand2)}
+.check{display:flex;gap:8px;align-items:center;font-weight:500}
+.check input{width:18px;height:18px;accent-color:var(--brand)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .field{flex:1;min-width:180px}
+.toolbar .field.sm{flex:0 0 180px}
+.empty{padding:36px;text-align:center;color:var(--mute)}
+.switch{position:relative;width:44px;height:24px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:#DDD3C9;border-radius:99px;cursor:pointer;transition:.2s}
+.switch span:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + span{background:var(--green)}
+.switch input:checked + span:before{transform:translateX(20px)}
+.setRow{display:flex;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.setRow:first-child{border-top:0}
+.setRow div{flex:1}
+.setRow small{display:block;color:var(--mute)}
+pre.summary{white-space:pre-wrap;font-family:inherit;background:#FFFBF7;border:1px solid var(--line);border-radius:12px;padding:16px;margin:0;line-height:1.7}
+
+footer{display:flex;align-items:center;gap:18px;color:#6d625a;font-size:12.5px;margin-top:18px;flex-wrap:wrap}
+footer .grow{flex:1}
+footer .ok{display:inline-flex;align-items:center;gap:6px}
+footer .ok i{width:9px;height:9px;border-radius:50%;background:var(--green)}
+
+/* modal & toast */
+.modal{position:fixed;inset:0;background:rgba(33,28,23,.38);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal.show{display:flex}
+.modal .box{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{margin:0 0 14px;font-size:19px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 12px;margin-bottom:16px}
+.kv dt{color:var(--mute)}.kv dd{margin:0;font-weight:500}
+.actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#2a231d;color:#fff;padding:11px 18px;border-radius:12px;opacity:0;transition:.25s;z-index:200;pointer-events:none;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--red)}
+.loader{position:fixed;top:0;left:0;height:3px;background:var(--brand);width:0;z-index:300;transition:width .4s}
+.loader.on{width:75%}
+.page{display:none}.page.active{display:block}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+@media (max-width:1100px){.grid21{grid-template-columns:1fr}}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;left:0;top:0;width:260px;transform:translateX(-100%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.15)}
+  aside.open{transform:none}
+  .scrim.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:25}
+  .menuBtn{display:grid}
+  main{padding:0 14px 24px}
+  .user .who{display:none}
+  .grid2,.filters{grid-template-columns:1fr}
+  .form{grid-template-columns:1fr 1fr}
+}
+@media (max-width:600px){
+  .kpis{grid-template-columns:1fr}
+  .kpi .ico{width:56px;height:56px}.kpi .num{font-size:30px}
+  .donutWrap{flex-direction:column;align-items:flex-start}
+  .form{grid-template-columns:1fr}
+  .rule{grid-template-columns:44px 1fr auto}
+  .rule .arrow,.rule .target{display:none}
+  .pageHead h1{font-size:25px}
+}
+</style>
+</head>
+<body>
+<div class="loader" id="loader"></div>
+<div class="app">
+  <aside id="side">
+    <div class="brand"><span id="logo"></span><div><b>Claude</b><small>QC Management Workspace</small></div></div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <div class="scrim" id="scrim" onclick="toggleNav(false)"></div>
+
+  <main>
+    <header class="topbar">
+      <button class="menuBtn" onclick="toggleNav(true)" aria-label="เปิดเมนู" data-ic="menu"></button>
+      <div class="grow"></div>
+      <button class="iconBtn" onclick="go('notifications')" aria-label="การแจ้งเตือน"><span data-ic="bell"></span><span class="dot" id="bellDot" hidden></span></button>
+      <div class="user"><div class="avatar" id="avatar">QC</div><div class="who"><b id="userName">QC User</b><small>QC Manager</small></div></div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section class="page" id="page-dashboard">
+      <div class="pageHead">
+        <div><h1>Quality Dashboard</h1><p>ภาพรวมการควบคุมคุณภาพ</p></div>
+        <div class="grow"></div>
+        <span class="pill" id="demoPill" hidden><span data-ic="info"></span>ข้อมูลตัวอย่าง</span>
+      </div>
+      <div class="filters">
+        <label class="field"><span data-ic="cal"></span><input type="month" id="fMonth" aria-label="เดือน"></label>
+        <label class="field"><span data-ic="factory"></span><select id="fLine" aria-label="ไลน์ผลิต"></select><span data-ic="chev"></span></label>
+        <label class="field"><span data-ic="box"></span><select id="fProduct" aria-label="ผลิตภัณฑ์"></select><span data-ic="chev"></span></label>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="cardHead"><span data-ic="trend"></span><h3>แนวโน้ม Defect Rate</h3><div class="grow"></div>
+          <select class="mini" id="trendMode"><option value="day">รายวัน</option><option value="week">รายสัปดาห์</option></select></div>
+        <div class="chartBox"><canvas id="cTrend"></canvas></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="cardHead"><span data-ic="doc"></span><h3>สถานะผลตรวจ</h3></div>
+          <div class="donutWrap">
+            <div class="donut"><canvas id="cDonut"></canvas><div class="center"><div><b id="donutTotal">0</b><small>รายการ</small></div></div></div>
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="cardHead"><span data-ic="bar"></span><h3>ปัญหาที่พบบ่อย</h3><div class="grow"></div>
+            <select class="mini" id="topN"><option value="5">Top 5</option><option value="10" selected>Top 10</option></select></div>
+          <div class="chartBox" style="height:200px"><canvas id="cTop"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cardHead"><span data-ic="doc"></span><h3>รายการตรวจล่าสุด</h3><div class="grow"></div><button class="link" onclick="go('inspections')">ดูทั้งหมด</button></div>
+        <div class="tableWrap"><table><thead><tr><th>Lot No.</th><th>วัตถุดิบ/สินค้า</th><th>วันที่ตรวจ</th><th>ผลการตรวจ</th><th>ผู้ตรวจ</th><th>Action</th></tr></thead><tbody id="recent"></tbody></table></div>
+      </div>
+      <div class="grid21">
+        <div class="card">
+          <div class="cardHead"><span data-ic="gear"></span><h3>Automation Center</h3><div class="grow"></div><button class="link" onclick="go('automation')">จัดการทั้งหมด</button></div>
+          <p style="margin:-6px 0 6px;color:var(--mute);font-size:13px">แจ้งเตือนทางอีเมล / Teams และส่งสรุปตามเวลาที่ตั้งไว้</p>
+          <div id="rules"></div>
+        </div>
+        <div style="display:grid;gap:14px;align-content:start">
+          <div class="card">
+            <div class="cardHead"><span data-ic="bell"></span><h3>การแจ้งเตือนล่าสุด</h3><div class="grow"></div><button class="link" onclick="go('notifications')">ดูทั้งหมด</button></div>
+            <div id="notiMini"></div>
+          </div>
+          <div class="card">
+            <div class="assistant"><span id="logo2"></span><div style="flex:1"><h3 style="margin:0;font-size:17px">Claude Assistant</h3>
+              <div style="font-weight:500;font-size:13.5px">สรุปแนวโน้มคุณภาพและงานที่ต้องติดตาม</div>
+              <p>วิเคราะห์ข้อมูลเดือนที่เลือก สรุปประเด็นสำคัญ และรายการที่ต้องติดตาม</p></div></div>
+            <button class="btn block" onclick="runSummary()"><span data-ic="doc"></span>สร้างสรุปรายงาน</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECORD -->
+    <section class="page" id="page-record">
+      <div class="pageHead"><div><h1 id="recTitle">บันทึกผลตรวจ</h1><p>กรอกผลตรวจแล้วกดบันทึก ระบบจะสร้างเลข Lot ให้อัตโนมัติถ้าเว้นว่าง</p></div></div>
+      <div class="card">
+        <form class="form" id="recForm" autocomplete="off">
+          <div class="full"><label>ขั้นตอนการตรวจ</label><div class="seg" id="stageSeg"></div></div>
+          <div><label for="rDate">วันที่ตรวจ</label><input type="date" id="rDate" name="InspectDate" required></div>
+          <div><label for="rLot">Lot No.</label><input id="rLot" name="LotNo" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ"></div>
+          <div><label for="rLine">ไลน์ผลิต</label><select id="rLine" name="Line"></select></div>
+          <div><label for="rProduct">ผลิตภัณฑ์</label><select id="rProduct" name="Product"></select></div>
+          <div class="incoming"><label for="rMaterial">วัตถุดิบ</label><select id="rMaterial" name="Material"></select></div>
+          <div class="incoming"><label for="rSupplier">ซัพพลายเออร์</label><select id="rSupplier" name="Supplier"></select></div>
+          <div><label for="rInspector">ผู้ตรวจ</label><select id="rInspector" name="Inspector"></select></div>
+          <div><label for="rSample">จำนวนตัวอย่าง</label><input type="number" min="0" id="rSample" name="SampleQty" value="100"></div>
+          <div><label for="rDefect">จำนวนที่พบปัญหา</label><input type="number" min="0" id="rDefect" name="DefectQty" value="0"></div>
+          <div><label for="rDefType">ประเภทปัญหา</label><select id="rDefType" name="DefectType"></select></div>
+          <div class="full"><label>ผลการตรวจ</label><div class="seg" id="resultSeg"></div></div>
+          <div class="full" id="capaOpt" hidden><label class="check"><input type="checkbox" id="rAutoCapa" checked>เปิด CAPA ให้อัตโนมัติเมื่อผลเป็น Reject</label></div>
+          <div class="full"><label for="rNote">หมายเหตุ</label><textarea id="rNote" name="Note" placeholder="รายละเอียดเพิ่มเติม เช่น อุณหภูมิที่วัดได้ สภาพบรรจุภัณฑ์"></textarea></div>
+          <div class="full actions" style="justify-content:flex-start;margin:0">
+            <button class="btn" type="submit" id="recSave"><span data-ic="check"></span>บันทึกผลตรวจ</button>
+            <button class="btn ghost" type="reset">ล้างฟอร์ม</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- INSPECTIONS / TRACEABILITY -->
+    <section class="page" id="page-inspections">
+      <div class="pageHead"><div><h1>Lot Traceability</h1><p>ค้นหาประวัติการตรวจทุกขั้นตอนจากเลข Lot วัตถุดิบ หรือซัพพลายเออร์</p></div></div>
+      <div class="toolbar">
+        <label class="field"><span data-ic="search"></span><input id="qText" placeholder="ค้นหา Lot No., สินค้า, วัตถุดิบ, ซัพพลายเออร์"></label>
+        <label class="field sm"><select id="qStage"><option value="">ทุกขั้นตอน</option><option>Incoming</option><option>In-process</option><option>Final</option></select><span data-ic="chev"></span></label>
+        <label class="field sm"><select id="qResult"><option value="">ทุกผลตรวจ</option><option>Pass</option><option>Hold</option><option>Reject</option></select><span data-ic="chev"></span></label>
+        <button class="btn ghost" onclick="exportCSV(S.list,'inspections')"><span data-ic="download"></span>ส่งออก CSV</button>
+      </div>
+      <div class="card"><div class="tableWrap" style="margin:-18px"><table><thead><tr><th>Lot No.</th><th>วันที่</th><th>ขั้นตอน</th><th>ไลน์</th><th>สินค้า / วัตถุดิบ</th><th>ซัพพลายเออร์</th><th>Defect</th><th>ผล</th><th>ผู้ตรวจ</th><th></th></tr></thead><tbody id="listBody"></tbody></table></div></div>
+    </section>
+
+    <!-- CAPA -->
+    <section class="page" id="page-capa">
+      <div class="pageHead"><div><h1>NCR / CAPA</h1><p>ติดตามการแก้ไขและป้องกันปัญหาคุณภาพ</p></div><div class="grow"></div>
+        <button class="btn" onclick="capaForm()"><span data-ic="plus"></span>เปิด CAPA ใหม่</button></div>
+      <div class="kpis" id="capaKpi" style="grid-template-columns:repeat(3,1fr)"></div>
+      <div class="card"><div class="tableWrap" style="margin:-18px"><table><thead><tr><th>CAPA No.</th><th>Lot</th><th>ปัญหา</th><th>ผู้รับผิดชอบ</th><th>ครบกำหนด</th><th>สถานะ</th><th></th></tr></thead><tbody id="capaBody"></tbody></table></div></div>
+    </section>
+
+    <!-- SUPPLIERS -->
+    <section class="page" id="page-suppliers">
+      <div class="pageHead"><div><h1>Suppliers</h1><p>ผลการตรวจรับวัตถุดิบแยกตามซัพพลายเออร์ เดือนที่เลือก</p></div></div>
+      <div class="card"><div class="tableWrap" style="margin:-18px"><table><thead><tr><th>ซัพพลายเออร์</th><th>ล็อตที่ตรวจ</th><th>Pass</th><th>Hold</th><th>Reject</th><th>อัตราผ่าน</th><th>Defect rate</th><th>ปัญหาหลัก</th></tr></thead><tbody id="supBody"></tbody></table></div></div>
+    </section>
+
+    <!-- REPORTS -->
+    <section class="page" id="page-reports">
+      <div class="pageHead"><div><h1>Reports</h1><p id="repSub">รายงานประจำเดือน</p></div><div class="grow"></div>
+        <button class="btn ghost" onclick="exportCSV(curRows(),'qc-'+S.month)"><span data-ic="download"></span>ส่งออก CSV</button>
+        <button class="btn ghost" onclick="window.print()"><span data-ic="doc"></span>พิมพ์</button></div>
+      <div class="grid2">
+        <div class="card"><div class="cardHead"><h3>แยกตามขั้นตอน</h3></div><div class="tableWrap"><table><thead><tr><th>ขั้นตอน</th><th>ตรวจ</th><th>ผ่าน</th><th>อัตราผ่าน</th><th>Defect rate</th></tr></thead><tbody id="repStage"></tbody></table></div></div>
+        <div class="card"><div class="cardHead"><h3>แยกตามไลน์ผลิต</h3></div><div class="tableWrap"><table><thead><tr><th>ไลน์</th><th>ตรวจ</th><th>ผ่าน</th><th>อัตราผ่าน</th><th>Defect rate</th></tr></thead><tbody id="repLine"></tbody></table></div></div>
+      </div>
+      <div class="card">
+        <div class="cardHead"><span data-ic="spark"></span><h3>สรุปโดย Claude Assistant</h3><div class="grow"></div><button class="btn sm" onclick="runSummary(true)">สร้างสรุปรายงาน</button></div>
+        <pre class="summary" id="summaryBox">กด “สร้างสรุปรายงาน” เพื่อสรุปข้อมูลเดือนนี้</pre>
+      </div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section class="page" id="page-notifications">
+      <div class="pageHead"><div><h1>Notifications</h1><p>ผลตรวจไม่ผ่าน งานรออนุมัติ และ CAPA ใกล้ครบกำหนด</p></div></div>
+      <div class="card" id="notiAll"></div>
+    </section>
+
+    <!-- AUTOMATION -->
+    <section class="page" id="page-automation">
+      <div class="pageHead"><div><h1>Automation</h1><p>ตั้งค่าการแจ้งเตือนและงานที่ทำตามเวลา</p></div></div>
+      <div class="grid2">
+        <div class="card">
+          <div class="cardHead"><h3>กฎอัตโนมัติ</h3></div>
+          <div class="setRow"><div><b>แจ้งเมื่อผลตรวจไม่ผ่าน</b><small>ส่งทันทีที่บันทึกผล Reject</small></div><label class="switch"><input type="checkbox" id="sReject"><span></span></label></div>
+          <div class="setRow"><div><b>เตือน CAPA ใกล้ครบกำหนด</b><small>ทุกวัน 09:00 สำหรับงานที่ครบภายใน 7 วัน</small></div><label class="switch"><input type="checkbox" id="sCapa"><span></span></label></div>
+          <div class="setRow"><div><b>สรุป QC ประจำวัน</b><small>ทุกวัน 08:00 สรุปผลของเมื่อวาน</small></div><label class="switch"><input type="checkbox" id="sDaily"><span></span></label></div>
+          <div class="setRow"><div><b>ตั้งเวลางาน</b><small id="trigInfo">ยังไม่ได้ตั้งเวลา</small></div><button class="btn sm ghost" onclick="installTriggers()">ตั้งเวลา</button></div>
+        </div>
+        <div class="card">
+          <div class="cardHead"><h3>ช่องทางแจ้งเตือน</h3></div>
+          <div class="form" style="grid-template-columns:1fr">
+            <div><label for="sEmail">อีเมลผู้รับ (คั่นด้วย ,)</label><input id="sEmail" placeholder="qc.team@company.com"></div>
+            <div><label for="sTeams">Teams / Power Automate webhook URL</label><input id="sTeams" placeholder="https://..."><div class="hint" id="teamsHint"></div></div>
+            <div><label for="sKey">Claude API key (สำหรับสรุปรายงาน)</label><input id="sKey" type="password" placeholder="sk-ant-..."><div class="hint" id="keyHint">ถ้าไม่ใส่ ระบบจะสรุปด้วยกฎพื้นฐาน</div></div>
+          </div>
+          <div class="actions"><button class="btn ghost" onclick="testNotify()">ส่งข้อความทดสอบ</button><button class="btn" onclick="saveSettings()">บันทึกการตั้งค่า</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <div class="pageHead"><div><h1>Settings</h1><p>ข้อมูลหลักที่ใช้ในฟอร์มบันทึก ใส่หนึ่งรายการต่อบรรทัด</p></div><div class="grow"></div>
+        <button class="btn" onclick="saveMaster()"><span data-ic="check"></span>บันทึกข้อมูลหลัก</button></div>
+      <div class="card"><div class="form" id="masterForm"></div></div>
+    </section>
+
+    <footer>
+      <span>Google Sheets</span><span>Apps Script</span><span>Teams / Outlook</span><span>Claude API</span>
+      <span class="grow"></span><span id="lastUpd">อัปเดตล่าสุด: -</span><span class="ok"><i></i><span id="connTxt">Connected</span></span>
+    </footer>
+  </main>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="box" id="modalBox"></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ Icons ============ */
+const IC={
+  home:'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  box:'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8',
+  gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
+  clip:'M9 3h6v3H9zM8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2M9 14l2 2 4-4',
+  tree:'M12 3a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM6 16a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM18 16a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 8v4M12 12l-5 4M12 12l5 4',
+  warn:'M12 3l10 18H2zM12 10v5M12 18v.01',
+  users:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.6',
+  bar:'M5 20V12M10 20V6M15 20V10M20 20V4',
+  bell:'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0',
+  search:'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5',
+  plus:'M12 5v14M5 12h14', cal:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  check:'M5 12l5 5L20 7', x:'M6 6l12 12M18 6L6 18',
+  hour:'M6 3h12M6 21h12M7 3v3l5 6-5 6v3M17 3v3l-5 6 5 6v3',
+  doc:'M14 3H6v18h12V7zM14 3v4h4M9 13h6M9 17h6', menu:'M4 6h16M4 12h16M4 18h16',
+  trend:'M3 17l6-6 4 4 8-8M15 7h6v6', download:'M12 3v12M7 10l5 5 5-5M5 21h14',
+  chev:'M6 9l6 6 6-6', info:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8v.01',
+  factory:'M3 21V10l6 4V10l6 4V6l6-3v18zM7 17h2M12 17h2M17 17h2',
+  user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21v-1a8 8 0 0 1 16 0v1',
+  play:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10 8l6 4-6 4z', clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+  arrow:'M5 12h14M13 6l6 6-6 6', dots:'M12 5v.01M12 12v.01M12 19v.01', trash:'M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14',
+  spark:'M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4'
+};
+function ic(n,s){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${s||1.9}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${IC[n]}"/></svg>`}
+function logo(size){let l='';for(let i=0;i<12;i++){const a=i*30;l+=`<line x1="20" y1="20" x2="20" y2="${i%2?5:3}" transform="rotate(${a} 20 20)"/>`}
+  return `<svg width="${size}" height="${size}" viewBox="0 0 40 40" stroke="#CF6136" stroke-width="3.2" stroke-linecap="round" aria-hidden="true">${l}</svg>`}
+function paintIcons(root){(root||document).querySelectorAll('[data-ic]').forEach(e=>{if(!e.dataset.done){e.innerHTML=ic(e.dataset.ic)+e.innerHTML;e.dataset.done=1;const s=e.querySelector('svg');if(e.tagName==='SPAN'&&!e.classList.contains('dot')){s.style.width=s.style.height='20px';e.style.display='inline-flex'}}})}
+
+/* ============ API layer (Apps Script หรือ Demo) ============ */
+const IS_GAS = typeof google!=='undefined' && google.script && google.script.run;
+function api(fn,...args){
+  return new Promise((res,rej)=>{
+    if(IS_GAS){google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(e))[fn](...args);}
+    else setTimeout(()=>{try{res(Mock[fn](...args))}catch(e){rej(e)}},180);
+  });
+}
+
+/* ============ State & helpers ============ */
+const S={page:'dashboard',month:ym(new Date()),line:'',product:'',stage:'Incoming',result:'Pass',data:null,list:[],charts:{}};
+const STAGE_TH={'Incoming':'Incoming QC','In-process':'In-process QC','Final':'Final Inspection'};
+const RES_IC={Pass:'check',Hold:'hour',Reject:'x'};
+function ym(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function ymd(d){return ym(d)+'-'+String(d.getDate()).padStart(2,'0')}
+function prevYM(m){const [y,mo]=m.split('-').map(Number);return ym(new Date(y,mo-2,1))}
+function dmy(s){if(!s)return'-';const p=String(s).slice(0,10).split('-');return p.length<3?s:`${p[2]}/${p[1]}/${p[0]}`}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function n(x){return Number(x||0).toLocaleString('th-TH')}
+function $(id){return document.getElementById(id)}
+function toast(msg,err){const t=$('toast');t.textContent=msg;t.className='show'+(err?' err':'');clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3200)}
+function loading(on){$('loader').classList.toggle('on',on)}
+function errMsg(e){return (e&&e.message)||String(e)}
+function tag(r){const cls=String(r||'').replace(/\s+/g,'');return `<span class="tag ${esc(cls)}">${ic(RES_IC[r]||'check',2.4)}${esc(r)}</span>`}
+function stats(rows){const s={total:rows.length,pass:0,hold:0,reject:0,sample:0,defect:0,types:{}};
+  rows.forEach(r=>{if(r.Result==='Pass')s.pass++;else if(r.Result==='Hold')s.hold++;else if(r.Result==='Reject')s.reject++;
+    s.sample+=+r.SampleQty||0;s.defect+=+r.DefectQty||0;if(r.DefectType)s.types[r.DefectType]=(s.types[r.DefectType]||0)+1});
+  s.rate=s.total?s.pass/s.total*100:0;s.dRate=s.sample?s.defect/s.sample*100:0;return s}
+function rowsOf(month){return (S.data?.inspections||[]).filter(r=>String(r.InspectDate).slice(0,7)===month&&(!S.line||r.Line===S.line)&&(!S.product||r.Product===S.product))}
+function curRows(){return rowsOf(S.month)}
+function openCapa(){return (S.data?.capa||[]).filter(c=>c.Status!=='Closed')}
+function daysTo(d){if(!d)return 999;const t=new Date(String(d).slice(0,10)+'T00:00');const now=new Date();now.setHours(0,0,0,0);return Math.round((t-now)/864e5)}
+
+/* ============ Navigation ============ */
+const NAV=[
+ {id:'dashboard',label:'Dashboard',icon:'home'},
+ {id:'record',label:'Incoming QC',icon:'box',stage:'Incoming'},
+ {id:'record',label:'In-process QC',icon:'gear',stage:'In-process'},
+ {id:'record',label:'Final Inspection',icon:'clip',stage:'Final'},
+ {id:'inspections',label:'Lot Traceability',icon:'tree'},
+ {id:'capa',label:'NCR / CAPA',icon:'warn'},
+ {id:'suppliers',label:'Suppliers',icon:'users'},
+ {id:'reports',label:'Reports',icon:'bar'},
+ {sep:1},
+ {id:'automation',label:'Automation',icon:'tree'},
+ {id:'notifications',label:'Notifications',icon:'bell',badge:1},
+ {id:'settings',label:'Settings',icon:'gear'}
+];
+function renderNav(){
+  const cnt=notifications().length;
+  $('nav').innerHTML=NAV.map((x,i)=>x.sep?'<hr>':`<a data-i="${i}" class="${S.page===x.id&&(!x.stage||x.stage===S.stage)?'active':''}" tabindex="0">${ic(x.icon)}<span>${x.label}</span>${x.badge&&cnt?`<span class="badge">${cnt}</span>`:''}</a>`).join('');
+  $('nav').querySelectorAll('a').forEach(a=>{const x=NAV[a.dataset.i];const h=()=>go(x.id,x.stage);a.onclick=h;a.onkeydown=e=>{if(e.key==='Enter')h()}});
+  $('bellDot').hidden=!cnt;
+}
+function toggleNav(o){$('side').classList.toggle('open',o);$('scrim').classList.toggle('open',o)}
+function go(page,stage){
+  S.page=page;if(stage)S.stage=stage;toggleNav(false);
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+page));
+  renderNav();window.scrollTo(0,0);
+  ({dashboard:renderDashboard,record:renderRecord,inspections:loadList,capa:renderCapa,suppliers:renderSuppliers,reports:renderReports,notifications:renderNotiAll,automation:renderAutomation,settings:renderSettings}[page]||(()=>{}))();
+}
+
+/* ============ Load ============ */
+async function load(){
+  loading(true);
+  try{
+    S.data=await api('getAppData',S.month);
+    $('demoPill').hidden=!!IS_GAS;
+    $('connTxt').textContent=IS_GAS?'Connected':'Demo mode';
+    $('lastUpd').textContent='อัปเดตล่าสุด: '+S.data.serverTime;
+    const nm=S.data.user.name||'QC User';$('userName').textContent=nm;$('avatar').textContent=nm.slice(0,2).toUpperCase();
+    fillSelects();go(S.page,S.stage);
+  }catch(e){toast('โหลดข้อมูลไม่สำเร็จ: '+errMsg(e),1)}
+  loading(false);
+}
+function opts(list,first){return (first!=null?`<option value="">${first}</option>`:'')+(list||[]).map(v=>`<option>${esc(v)}</option>`).join('')}
+function fillSelects(){
+  const m=S.data.master;
+  $('fLine').innerHTML=opts(m.Line,'ทุกไลน์ผลิต');$('fLine').value=S.line;
+  $('fProduct').innerHTML=opts(m.Product,'ทุกผลิตภัณฑ์');$('fProduct').value=S.product;
+  $('fMonth').value=S.month;
+  $('rLine').innerHTML=opts(m.Line,'- เลือก -');$('rProduct').innerHTML=opts(m.Product,'- เลือก -');
+  $('rMaterial').innerHTML=opts(m.Material,'- เลือก -');$('rSupplier').innerHTML=opts(m.Supplier,'- เลือก -');
+  $('rInspector').innerHTML=opts(m.Inspector,'- เลือก -');$('rDefType').innerHTML=opts(m.DefectType,'ไม่พบปัญหา');
+}
+
+/* ============ Dashboard ============ */
+function deltaHtml(cur,prev,unit,goodWhenUp){
+  const d=cur-prev; if(!prev&&!cur) return '<div class="delta">ไม่มีข้อมูลเดือนก่อน</div>';
+  const up=d>=0; const good=goodWhenUp?up:!up;
+  const val=unit==='%'?Math.abs(d).toFixed(1)+'%':(unit==='pct'?Math.abs(prev?d/prev*100:0).toFixed(0)+'%':Math.abs(d));
+  return `<div class="delta"><b class="${good?'up':'down'}">${up?'▲':'▼'} ${up?'+':'-'}${val}</b>จากเดือนก่อน</div>`;
+}
+function renderDashboard(){
+  if(!S.data)return;
+  const cur=curRows(),prev=rowsOf(prevYM(S.month));const s=stats(cur),p=stats(prev);
+  const capa=openCapa().length;
+  $('kpis').innerHTML=[
+    {l:'รายการตรวจ',v:n(s.total),i:'clip',c:'blue',d:deltaHtml(s.total,p.total,'pct',true)},
+    {l:'ผ่านเกณฑ์',v:s.rate.toFixed(1)+'%',i:'check',c:'green',d:deltaHtml(s.rate,p.rate,'%',true)},
+    {l:'รออนุมัติ',v:n(s.hold),i:'hour',c:'amber',d:deltaHtml(s.hold,p.hold,'',false).replace('จากเดือนก่อน','รายการ'),go:"filterInspections('Hold')"},
+    {l:'CAPA ค้าง',v:n(capa),i:'doc',c:'red',d:`<div class="delta">งานที่ยังไม่ปิด</div>`,go:"go('capa')"}
+  ].map(k=>`<div class="card kpi" ${k.go?`style="cursor:pointer" onclick="${k.go}"`:''}><div class="ico" style="background:var(--${k.c}Soft);color:var(--${k.c})">${ic(k.i,2.1)}</div><div><label>${k.l}</label><div class="val"><span class="num">${k.v}</span>${k.d}</div></div></div>`).join('');
+
+  // trend
+  const mode=$('trendMode').value, buckets={};
+  cur.forEach(r=>{const day=+String(r.InspectDate).slice(8,10);const key=mode==='day'?day:Math.ceil(day/7);(buckets[key]=buckets[key]||[]).push(r)});
+  const keys=Object.keys(buckets).map(Number).sort((a,b)=>a-b);
+  const mm=S.month.slice(5,7);
+  const labels=keys.map(k=>mode==='day'?String(k).padStart(2,'0')+'/'+mm:'สัปดาห์ '+k);
+  const vals=keys.map(k=>+stats(buckets[k]).dRate.toFixed(2));
+  chart('cTrend',{type:'line',data:{labels,datasets:[{data:vals,borderColor:'#CF6136',backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,'rgba(207,97,54,.22)');g.addColorStop(1,'rgba(207,97,54,0)');return g},fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#CF6136',pointBorderColor:'#fff',pointBorderWidth:2}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' Defect rate '+c.parsed.y+'%'}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v.toFixed(1)+'%'},grid:{color:'#F1EAE2'}},x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}}}}});
+
+  // donut
+  $('donutTotal').textContent=n(s.total);
+  chart('cDonut',{type:'doughnut',data:{labels:['Pass','Hold','Reject'],datasets:[{data:[s.pass,s.hold,s.reject],backgroundColor:['#16A34A','#F29D0B','#DC2626'],borderWidth:0}]},options:{cutout:'68%',plugins:{legend:{display:false}},maintainAspectRatio:false}});
+  const pc=x=>s.total?(x/s.total*100).toFixed(1):'0.0';
+  $('legend').innerHTML=[['Pass',s.pass,'#16A34A'],['Hold',s.hold,'#F29D0B'],['Reject',s.reject,'#DC2626']].map(x=>`<div><i style="background:${x[2]}"></i><span><b>${x[0]}</b>${n(x[1])} (${pc(x[1])}%)</span></div>`).join('');
+
+  // top defects
+  const top=Object.entries(s.types).sort((a,b)=>b[1]-a[1]).slice(0,+$('topN').value);
+  chart('cTop',{type:'bar',data:{labels:top.map(t=>t[0]),datasets:[{data:top.map(t=>t[1]),backgroundColor:'#D97A55',borderRadius:3,barThickness:20}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0},grid:{color:'#F1EAE2'}},y:{grid:{display:false}}}}});
+
+  // recent
+  const recent=cur.slice().sort((a,b)=>String(b.InspectDate+b.CreatedAt).localeCompare(a.InspectDate+a.CreatedAt)).slice(0,6);
+  $('recent').innerHTML=recent.length?recent.map(r=>`<tr><td>${esc(r.LotNo)}</td><td>${esc(r.Material||r.Product)}</td><td>${dmy(r.InspectDate)}</td><td>${tag(r.Result)}</td><td>${esc(r.Inspector)}</td><td><button class="btn ghost sm" onclick="detail('${esc(r.ID)}')">ตรวจสอบ</button></td></tr>`).join('')
+    :`<tr><td colspan="6" class="empty">ยังไม่มีผลตรวจในเดือนนี้ <button class="link" onclick="go('record','Incoming')">บันทึกผลตรวจแรก</button></td></tr>`;
+
+  // automation rules
+  const st=S.data.settings;
+  const scheduled=(st.triggers||[]).includes('dailySummaryJob');
+  $('rules').innerHTML=[
+    {t:'ผลตรวจไม่ผ่าน',i:'x',c:'red',to:'แจ้ง Teams / อีเมล',ti:'bell',on:st.rejectAlert,k:'rejectAlert'},
+    {t:'CAPA ใกล้ครบกำหนด',i:'hour',c:'amber',to:'เตือนผู้รับผิดชอบ',ti:'user',on:st.capaDue,k:'capaDue'},
+    {t:'สรุป QC ประจำวัน',i:'bar',c:'blue',to:'ส่งรายงาน 08:00',ti:'doc',on:st.dailySummary,k:'dailySummary',sched:true}
+  ].map(r=>`<div class="rule"><div class="ri" style="background:var(--${r.c}Soft);color:var(--${r.c})">${ic(r.i,2.2)}</div><b>${r.t}</b><span class="arrow" style="color:var(--mute)">${ic('arrow')}</span>
+    <span class="target" style="display:flex;gap:8px;align-items:center;color:#4E443B"><span style="width:22px">${ic(r.ti)}</span><small>${r.to}</small></span>
+    <button class="state ${!r.on?'off':r.sched&&scheduled?'sched':'on'}" onclick="toggleRule('${r.k}',${!r.on})">${ic(r.sched&&scheduled&&r.on?'clock':'play').replace('<svg','<svg width="16" height="16"')}${!r.on?'ปิดอยู่':r.sched&&scheduled?'ตั้งเวลาแล้ว':'เปิดใช้งาน'}</button></div>`).join('');
+
+  $('notiMini').innerHTML=notiHtml(notifications().slice(0,3));
+}
+function chart(id,cfg){if(S.charts[id])S.charts[id].destroy();if(typeof Chart==='undefined')return;Chart.defaults.font.family="'IBM Plex Sans Thai',sans-serif";Chart.defaults.color='#6d625a';S.charts[id]=new Chart($(id),cfg)}
+async function toggleRule(k,v){try{S.data.settings=await api('saveSettings',{[k]:v});renderDashboard();toast(v?'เปิดใช้งานแล้ว':'ปิดการทำงานแล้ว')}catch(e){toast(errMsg(e),1)}}
+
+/* ============ Notifications ============ */
+function notifications(){
+  if(!S.data)return[];const out=[];
+  const rej=curRows().filter(r=>r.Result==='Reject').sort((a,b)=>String(b.InspectDate).localeCompare(a.InspectDate));
+  if(rej.length)out.push({t:`พบผลตรวจไม่ผ่าน ${rej.length} รายการ`,s:rej.slice(0,3).map(r=>r.LotNo).join(', '),time:dmy(rej[0].InspectDate),c:'red',i:'x',go:"filterInspections('Reject')"});
+  const hold=curRows().filter(r=>r.Result==='Hold');
+  if(hold.length)out.push({t:`รออนุมัติ ${hold.length} รายการ`,s:'ผลตรวจสถานะ Hold ที่ต้องตัดสิน',time:'',c:'amber',i:'hour',go:"filterInspections('Hold')"});
+  const due=openCapa().filter(c=>{const d=daysTo(c.DueDate);return d>=0&&d<=7});
+  if(due.length)out.push({t:`CAPA ใกล้ครบกำหนด ${due.length} งาน`,s:due.slice(0,3).map(c=>c.CapaNo).join(', '),time:'',c:'amber',i:'warn',go:"go('capa')"});
+  const over=openCapa().filter(c=>daysTo(c.DueDate)<0);
+  if(over.length)out.push({t:`CAPA เลยกำหนด ${over.length} งาน`,s:over.slice(0,3).map(c=>`${c.CapaNo} (${c.Owner||'-'})`).join(', '),time:'',c:'red',i:'warn',go:"go('capa')"});
+  return out;
+}
+function notiHtml(list){return list.length?list.map(x=>`<div class="noti" style="cursor:pointer" onclick="${x.go}"><span class="ni" style="background:var(--${x.c}Soft);color:var(--${x.c})">${ic(x.i,2.4)}</span><div><b>${esc(x.t)}</b><small>${esc(x.s)}</small></div><time>${x.time}</time></div>`).join(''):'<div class="empty" style="padding:16px">ไม่มีเรื่องที่ต้องติดตาม</div>'}
+function renderNotiAll(){$('notiAll').innerHTML=notiHtml(notifications())}
+
+/* ============ Record ============ */
+function renderRecord(){
+  $('recTitle').textContent='บันทึกผลตรวจ · '+STAGE_TH[S.stage];
+  $('stageSeg').innerHTML=Object.keys(STAGE_TH).map(k=>`<button type="button" class="stage ${k===S.stage?'on':''}" onclick="S.stage='${k}';renderRecord();renderNav()">${STAGE_TH[k]}</button>`).join('');
+  $('resultSeg').innerHTML=['Pass','Hold','Reject'].map(k=>`<button type="button" class="${k} ${k===S.result?'on':''}" onclick="S.result='${k}';renderRecord()">${ic(RES_IC[k],2.4)}${k}</button>`).join('');
+  document.querySelectorAll('#recForm .incoming').forEach(e=>e.style.display=S.stage==='Incoming'?'':'none');
+  $('capaOpt').hidden=S.result!=='Reject';
+  if(!$('rDate').value)$('rDate').value=ymd(new Date());
+}
+$('recForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=new FormData(e.target);const d=Object.fromEntries(f.entries());
+  d.Stage=S.stage;d.Result=S.result;d.autoCapa=S.result==='Reject'&&$('rAutoCapa').checked;
+  if(S.stage!=='Incoming'){d.Material='';d.Supplier=''}
+  if(+d.DefectQty>+d.SampleQty)return toast('จำนวนที่พบปัญหาต้องไม่เกินจำนวนตัวอย่าง',1);
+  if(+d.DefectQty>0&&!d.DefectType)return toast('เลือกประเภทปัญหาเมื่อพบของเสีย',1);
+  const b=$('recSave');b.disabled=true;loading(true);
+  try{const r=await api('saveInspection',d);toast(`บันทึกผลตรวจแล้ว ${r.LotNo}${r.CapaNo?' · เปิด '+r.CapaNo:''}`);
+    e.target.reset();S.result='Pass';$('rDate').value=ymd(new Date());await load()}
+  catch(err){toast('บันทึกไม่สำเร็จ: '+errMsg(err),1)}
+  b.disabled=false;loading(false);
+});
+$('recForm').addEventListener('reset',()=>setTimeout(()=>{S.result='Pass';$('rDate').value=ymd(new Date());renderRecord()}));
+
+/* ============ List / traceability ============ */
+let qTimer,listReq=0;
+function filterInspections(res){$('qText').value='';$('qStage').value='';$('qResult').value=res||'';go('inspections')}
+async function loadList(){
+  const req=++listReq;
+  $('listBody').innerHTML='<tr><td colspan="10" class="empty">กำลังค้นหา…</td></tr>';
+  try{const rows=await api('listInspections',{q:$('qText').value,stage:$('qStage').value,result:$('qResult').value,limit:300});
+    if(req!==listReq)return;
+    S.list=rows;
+    $('listBody').innerHTML=S.list.length?S.list.map(r=>`<tr><td><b>${esc(r.LotNo)}</b></td><td>${dmy(r.InspectDate)}</td><td>${esc(r.Stage)}</td><td>${esc(r.Line)}</td><td>${esc(r.Product)}${r.Material?'<br><small style="color:var(--mute)">'+esc(r.Material)+'</small>':''}</td><td>${esc(r.Supplier||'-')}</td><td>${n(r.DefectQty)}/${n(r.SampleQty)}${r.DefectType?' · '+esc(r.DefectType):''}</td><td>${tag(r.Result)}</td><td>${esc(r.Inspector)}</td><td><button class="btn ghost sm" onclick="detail('${esc(r.ID)}')">ตรวจสอบ</button></td></tr>`).join('')
+      :'<tr><td colspan="10" class="empty">ไม่พบรายการที่ตรงกับคำค้น ลองเปลี่ยนคำค้นหรือล้างตัวกรอง</td></tr>'}
+  catch(e){if(req===listReq)toast(errMsg(e),1)}
+}
+['qStage','qResult'].forEach(id=>$(id).addEventListener('change',loadList));
+$('qText').addEventListener('input',()=>{clearTimeout(qTimer);qTimer=setTimeout(loadList,350)});
+
+function findInsp(id){return (S.list||[]).concat(S.data?.inspections||[]).find(r=>String(r.ID)===String(id))}
+function capaFromInsp(id){const r=findInsp(id);if(!r)return;closeModal();capaForm({LotNo:r.LotNo,Issue:'Reject: '+(r.DefectType||''),Owner:r.Inspector||''})}
+function detail(id){
+  const r=findInsp(id);if(!r)return;
+  openModal(`<h3>${esc(r.LotNo)} ${tag(r.Result)}</h3>
+  <dl class="kv"><dt>วันที่ตรวจ</dt><dd>${dmy(r.InspectDate)}</dd><dt>ขั้นตอน</dt><dd>${esc(STAGE_TH[r.Stage]||r.Stage)}</dd><dt>ไลน์ผลิต</dt><dd>${esc(r.Line||'-')}</dd>
+  <dt>ผลิตภัณฑ์</dt><dd>${esc(r.Product||'-')}</dd><dt>วัตถุดิบ</dt><dd>${esc(r.Material||'-')}</dd><dt>ซัพพลายเออร์</dt><dd>${esc(r.Supplier||'-')}</dd>
+  <dt>ตัวอย่าง / ของเสีย</dt><dd>${n(r.SampleQty)} / ${n(r.DefectQty)} ${r.DefectType?'('+esc(r.DefectType)+')':''}</dd><dt>ผู้ตรวจ</dt><dd>${esc(r.Inspector||'-')}</dd>
+  <dt>หมายเหตุ</dt><dd>${esc(r.Note||'-')}</dd><dt>บันทึกโดย</dt><dd>${esc(r.CreatedBy||'-')} · ${esc(r.CreatedAt||'')}</dd></dl>
+  <div class="actions" style="justify-content:space-between">
+    <button class="btn ghost sm" onclick="delInsp('${esc(r.ID)}')">${ic('trash')}ลบ</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${r.Result!=='Pass'?`<button class="btn green sm" onclick="setResult('${esc(r.ID)}','Pass')">อนุมัติผ่าน</button>`:''}
+      ${r.Result!=='Hold'?`<button class="btn amber sm" onclick="setResult('${esc(r.ID)}','Hold')">พักไว้ (Hold)</button>`:''}
+      ${r.Result!=='Reject'?`<button class="btn red sm" onclick="setResult('${esc(r.ID)}','Reject')">ไม่ผ่าน</button>`:''}
+      ${r.Result==='Reject'?`<button class="btn sm" onclick="capaFromInsp('${esc(r.ID)}')">เปิด CAPA</button>`:''}
+      <button class="btn ghost sm" onclick="closeModal()">ปิด</button></div></div>`);
+}
+async function setResult(id,res){loading(true);try{await api('updateInspection',id,{Result:res});toast('เปลี่ยนผลเป็น '+res+' แล้ว');closeModal();await load();if(S.page==='inspections')loadList()}catch(e){toast(errMsg(e),1)}loading(false)}
+async function delInsp(id){if(!confirm('ลบรายการตรวจนี้? การลบย้อนกลับไม่ได้'))return;loading(true);try{await api('deleteInspection',id);toast('ลบรายการแล้ว');closeModal();await load();if(S.page==='inspections')loadList()}catch(e){toast(errMsg(e),1)}loading(false)}
+
+/* ============ CAPA ============ */
+function renderCapa(){
+  const all=S.data.capa;const open=all.filter(c=>c.Status==='Open').length,prog=all.filter(c=>c.Status==='In progress').length,over=openCapa().filter(c=>daysTo(c.DueDate)<0).length;
+  $('capaKpi').innerHTML=[['เปิดอยู่',open,'red','warn'],['กำลังแก้ไข',prog,'amber','hour'],['เลยกำหนด',over,'red','clock']].map(k=>`<div class="card kpi"><div class="ico" style="background:var(--${k[2]}Soft);color:var(--${k[2]})">${ic(k[3],2.1)}</div><div><label>${k[0]}</label><span class="num">${k[1]}</span></div></div>`).join('');
+  const rows=all.slice().sort((a,b)=>(a.Status==='Closed')-(b.Status==='Closed')||String(a.DueDate).localeCompare(b.DueDate));
+  $('capaBody').innerHTML=rows.length?rows.map(c=>{const d=daysTo(c.DueDate);const late=c.Status!=='Closed'&&d<0;
+    return `<tr><td><b>${esc(c.CapaNo)}</b></td><td>${esc(c.LotNo||'-')}</td><td style="white-space:normal;min-width:220px">${esc(c.Issue)}</td><td>${esc(c.Owner||'-')}</td>
+    <td style="color:${late?'var(--red)':'inherit'}">${dmy(c.DueDate)}${c.Status!=='Closed'?`<br><small style="color:var(--mute)">${late?'เลย '+(-d)+' วัน':'อีก '+d+' วัน'}</small>`:''}</td>
+    <td><select class="mini" onchange="updCapa('${esc(c.CapaNo)}',{Status:this.value})">${['Open','In progress','Closed'].map(s=>`<option ${s===c.Status?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td><button class="btn ghost sm" onclick="editCapa('${esc(c.CapaNo)}')">แก้ไข</button></td></tr>`}).join('')
+    :'<tr><td colspan="7" class="empty">ยังไม่มี CAPA กด “เปิด CAPA ใหม่” เพื่อเริ่มติดตามปัญหา</td></tr>';
+}
+function editCapa(no){const c=(S.data?.capa||[]).find(x=>String(x.CapaNo)===String(no));if(c)capaForm(c)}
+function capaForm(c){
+  c=c||{};const m=S.data.master;const edit=!!c.CapaNo;
+  const due=c.DueDate?String(c.DueDate).slice(0,10):ymd(new Date(Date.now()+7*864e5));
+  openModal(`<h3>${edit?'แก้ไข '+esc(c.CapaNo):'เปิด CAPA ใหม่'}</h3>
+  <form class="form" id="capaF" style="grid-template-columns:1fr 1fr">
+   <div><label>Lot No.</label><input name="LotNo" value="${esc(c.LotNo||'')}"></div>
+   <div><label>ผู้รับผิดชอบ</label><input name="Owner" list="ownerList" value="${esc(c.Owner||'')}"><datalist id="ownerList">${(m.Inspector||[]).map(v=>`<option value="${esc(v)}">`).join('')}</datalist></div>
+   <div class="full"><label>ปัญหาที่พบ *</label><input name="Issue" required value="${esc(c.Issue||'')}"></div>
+   <div class="full"><label>สาเหตุ (Root cause)</label><textarea name="RootCause">${esc(c.RootCause||'')}</textarea></div>
+   <div class="full"><label>การแก้ไข / ป้องกัน</label><textarea name="Action">${esc(c.Action||'')}</textarea></div>
+   <div><label>ครบกำหนด</label><input type="date" name="DueDate" value="${due}"></div>
+   <div><label>สถานะ</label><select name="Status">${['Open','In progress','Closed'].map(s=>`<option ${s===(c.Status||'Open')?'selected':''}>${s}</option>`).join('')}</select></div>
+   <div class="full actions"><button type="button" class="btn ghost" onclick="closeModal()">ยกเลิก</button><button class="btn" type="submit">${edit?'บันทึกการแก้ไข':'เปิด CAPA'}</button></div>
+  </form>`);
+  $('capaF').onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target).entries());if(edit)d.CapaNo=c.CapaNo;
+    loading(true);try{const r=await api('saveCapa',d);toast((edit?'บันทึก ':'เปิด ')+r.CapaNo+' แล้ว');closeModal();await load()}catch(er){toast(errMsg(er),1)}loading(false)};
+}
+async function updCapa(no,f){loading(true);try{await api('updateCapa',no,f);toast('อัปเดต '+no+' แล้ว');await load()}catch(e){toast(errMsg(e),1)}loading(false)}
+
+/* ============ Suppliers & Reports ============ */
+function groupTable(rows,key,extra){
+  const g={};rows.forEach(r=>{const k=r[key]||'-';(g[k]=g[k]||[]).push(r)});
+  return Object.entries(g).map(([k,v])=>[k,stats(v)]).sort((a,b)=>a[1].rate-b[1].rate);
+}
+function rateCell(r){const c=r>=97?'var(--green)':r>=93?'#A2640A':'var(--red)';return `<b style="color:${c}">${r.toFixed(1)}%</b>`}
+function renderSuppliers(){
+  const rows=curRows().filter(r=>r.Supplier);
+  const g=groupTable(rows,'Supplier');
+  $('supBody').innerHTML=g.length?g.map(([k,s])=>{const top=Object.entries(s.types).sort((a,b)=>b[1]-a[1])[0];
+    return `<tr><td><b>${esc(k)}</b></td><td>${s.total}</td><td>${s.pass}</td><td>${s.hold}</td><td>${s.reject}</td><td>${rateCell(s.rate)}</td><td>${s.dRate.toFixed(2)}%</td><td>${top?esc(top[0])+' ('+top[1]+')':'-'}</td></tr>`}).join('')
+    :'<tr><td colspan="8" class="empty">ยังไม่มีผลตรวจรับวัตถุดิบในเดือนนี้</td></tr>';
+}
+function renderReports(){
+  const [y,m]=S.month.split('-');$('repSub').textContent=`รายงานประจำเดือน ${new Date(+y,+m-1,1).toLocaleDateString('th-TH',{month:'long',year:'numeric'})}`;
+  const row=([k,s])=>`<tr><td>${esc(k)}</td><td>${s.total}</td><td>${s.pass}</td><td>${rateCell(s.rate)}</td><td>${s.dRate.toFixed(2)}%</td></tr>`;
+  const empty='<tr><td colspan="5" class="empty">ไม่มีข้อมูล</td></tr>';
+  const a=groupTable(curRows(),'Stage'),b=groupTable(curRows(),'Line');
+  $('repStage').innerHTML=a.length?a.map(row).join(''):empty;$('repLine').innerHTML=b.length?b.map(row).join(''):empty;
+}
+async function runSummary(inPage){
+  if(!inPage){go('reports')}
+  $('summaryBox').textContent='กำลังวิเคราะห์ข้อมูล…';
+  try{const r=await api('generateSummary',S.month);$('summaryBox').textContent=r.text+(r.source==='rules'?'\n\n(สรุปด้วยกฎพื้นฐาน — ใส่ Claude API key ในหน้า Automation เพื่อให้ Claude วิเคราะห์)':'')}
+  catch(e){$('summaryBox').textContent='สร้างสรุปไม่สำเร็จ: '+errMsg(e)}
+}
+function exportCSV(rows,name){
+  if(!rows||!rows.length)return toast('ไม่มีข้อมูลให้ส่งออก',1);
+  const cols=['LotNo','InspectDate','Stage','Line','Product','Material','Supplier','Inspector','SampleQty','DefectQty','DefectType','Result','Note'];
+  const csv='\ufeff'+cols.join(',')+'\n'+rows.map(r=>cols.map(c=>`"${String(r[c]==null?'':r[c]).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=name+'.csv';a.click();toast('ส่งออก CSV แล้ว');
+}
+
+/* ============ Automation & Settings ============ */
+function renderAutomation(){
+  const s=S.data.settings;$('sReject').checked=s.rejectAlert;$('sCapa').checked=s.capaDue;$('sDaily').checked=s.dailySummary;
+  $('sEmail').value=s.notifyEmail||'';$('sTeams').value='';$('sKey').value='';
+  $('teamsHint').innerHTML=s.hasTeams?'ตั้งค่าแล้ว — ใส่ URL ใหม่เพื่อเปลี่ยน หรือ <button type="button" class="link" onclick="clearSecret(\'clearTeams\')">ล้างค่า</button>':'ยังไม่ได้ตั้งค่า';
+  $('keyHint').innerHTML=s.hasClaudeKey?'ตั้งค่าแล้ว — ใส่คีย์ใหม่เพื่อเปลี่ยน หรือ <button type="button" class="link" onclick="clearSecret(\'clearClaudeKey\')">ล้างคีย์</button>':'ถ้าไม่ใส่ ระบบจะสรุปด้วยกฎพื้นฐาน';
+  const t=s.triggers||[];$('trigInfo').textContent=t.length?'ตั้งเวลาแล้ว: '+[...new Set(t)].join(', '):'ยังไม่ได้ตั้งเวลา กดปุ่มเพื่อเริ่มงานรายวัน';
+}
+async function clearSecret(field){
+  loading(true);try{S.data.settings=await api('saveSettings',{[field]:true});renderAutomation();toast('ล้างค่าแล้ว')}catch(e){toast(errMsg(e),1)}loading(false);
+}
+async function saveSettings(){
+  loading(true);try{S.data.settings=await api('saveSettings',{rejectAlert:$('sReject').checked,capaDue:$('sCapa').checked,dailySummary:$('sDaily').checked,notifyEmail:$('sEmail').value,teamsWebhook:$('sTeams').value,claudeKey:$('sKey').value});
+    renderAutomation();toast('บันทึกการตั้งค่าแล้ว')}catch(e){toast(errMsg(e),1)}loading(false)}
+async function installTriggers(){loading(true);try{toast(await api('installTriggers'));S.data.settings=await api('saveSettings',{});renderAutomation()}catch(e){toast(errMsg(e),1)}loading(false)}
+async function testNotify(){loading(true);try{toast(await api('testNotify'))}catch(e){toast(errMsg(e),1)}loading(false)}
+const MASTER_TH={Line:'ไลน์ผลิต',Product:'ผลิตภัณฑ์',Material:'วัตถุดิบ',Supplier:'ซัพพลายเออร์',Inspector:'ผู้ตรวจ',DefectType:'ประเภทปัญหา'};
+function renderSettings(){const m=S.data.master;$('masterForm').innerHTML=Object.keys(MASTER_TH).map(k=>`<div><label for="m_${k}">${MASTER_TH[k]}</label><textarea id="m_${k}" style="min-height:150px">${esc((m[k]||[]).join('\n'))}</textarea></div>`).join('')}
+async function saveMaster(){const o={};Object.keys(MASTER_TH).forEach(k=>o[k]=$('m_'+k).value.split('\n').map(s=>s.trim()).filter(Boolean));
+  loading(true);try{const r=await api('saveMaster',o);S.data.master=r.master;fillSelects();toast('บันทึกข้อมูลหลักแล้ว')}catch(e){toast(errMsg(e),1)}loading(false)}
+
+/* ============ Modal ============ */
+function openModal(html){$('modalBox').innerHTML=html;$('modal').classList.add('show');const f=$('modalBox').querySelector('input,button');f&&f.focus()}
+function closeModal(){$('modal').classList.remove('show')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ============ Filters ============ */
+$('fMonth').addEventListener('change',e=>{if(e.target.value){S.month=e.target.value;load()}});
+$('fLine').addEventListener('change',e=>{S.line=e.target.value;renderDashboard()});
+$('fProduct').addEventListener('change',e=>{S.product=e.target.value;renderDashboard()});
+$('trendMode').addEventListener('change',renderDashboard);
+$('topN').addEventListener('change',renderDashboard);
+
+/* ============ Demo backend (ใช้เมื่อเปิดไฟล์นอก Apps Script) ============ */
+const Mock=(()=>{
+  const M={Line:['ไลน์ผลิต A','ไลน์ผลิต B','ไลน์ผลิต C'],Product:['ทูน่ากระป๋อง','ซาร์ดีนกระป๋อง','อาหารแมวกระป๋อง'],Material:['เนื้อทูน่าแช่แข็ง','ฟิล์มบรรจุภัณฑ์','ฝาอะลูมิเนียมกระป๋อง','กระป๋องเปล่า','น้ำมันพืช'],
+    Supplier:['บจก. ซีฟู้ด ซัพพลาย','บจก. แพ็คพลัส','บจก. เมทัลแคน'],Inspector:['กิตติพงศ์','สุภาพร','อนุชา'],DefectType:['บรรจุภัณฑ์','น้ำหนัก','อุณหภูมิ','สิ่งแปลกปลอม','ฉลาก','ซีลรั่ว']};
+  let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;const pick=a=>a[Math.floor(rnd()*a.length)];
+  const insp=[],capa=[];let id=1;const cnt={};
+  const now=new Date();
+  for(let back=2;back>=0;back--){const y=now.getFullYear(),m=now.getMonth()-back;const last=back?new Date(y,m+1,0).getDate():now.getDate();
+    for(let d=1;d<=last;d++){const k=3+Math.floor(rnd()*4);for(let i=0;i<k;i++){const dt=new Date(y,m,d);const r=rnd();const res=r<.955?'Pass':r<.975?'Hold':'Reject';const st=pick(['Incoming','In-process','Final']);
+      const sample=pick([50,80,100,125]);const dq=res==='Pass'?(rnd()<.35?1+Math.floor(rnd()*2):0):2+Math.floor(rnd()*6);const pre='L'+String(dt.getFullYear()).slice(2)+String(dt.getMonth()+1).padStart(2,'0')+'-';cnt[pre]=(cnt[pre]||0)+1;
+      insp.push({ID:'d'+(id++),LotNo:pre+String(cnt[pre]).padStart(4,'0'),InspectDate:ymd(dt)+' 00:00',Stage:st,Line:pick(M.Line),Product:pick(M.Product),Material:st==='Incoming'?pick(M.Material):'',Supplier:st==='Incoming'?pick(M.Supplier):'',Inspector:pick(M.Inspector),SampleQty:sample,DefectQty:dq,DefectType:dq?pick(M.DefectType):'',Result:res,Note:'',CreatedAt:ymd(dt)+' 0'+(8+i%2)+':'+String(10+i*7).slice(0,2),CreatedBy:'demo'})}}}
+  for(let i=0;i<7;i++)capa.push({CapaNo:'CAPA-'+ym(now).slice(2).replace('-','')+'-'+String(i+1).padStart(3,'0'),LotNo:'',Issue:'ปัญหา'+pick(M.DefectType)+'ซ้ำในไลน์ผลิต',RootCause:'',Action:'',Owner:pick(M.Inspector),DueDate:ymd(new Date(Date.now()+(i-1)*3*864e5)),Status:i<2?'In progress':'Open',CreatedAt:ymd(now)});
+  const settings={rejectAlert:true,capaDue:true,dailySummary:true,notifyEmail:'',hasTeams:false,hasClaudeKey:false,triggers:['dailySummaryJob','capaDueJob']};
+  return{
+    getAppData(month){const prev=prevYM(month);return{month,prevMonth:prev,inspections:insp.filter(r=>[month,prev].includes(r.InspectDate.slice(0,7))),capa,master:M,settings,user:{name:'Nattapong T.'},serverTime:new Date().toLocaleString('th-TH')}},
+    listInspections(f){const q=(f.q||'').toLowerCase();return insp.filter(r=>(!f.stage||r.Stage===f.stage)&&(!f.result||r.Result===f.result)&&(!q||[r.LotNo,r.Product,r.Material,r.Supplier,r.Inspector,r.Line].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.InspectDate+b.CreatedAt).localeCompare(a.InspectDate+a.CreatedAt)).slice(0,f.limit||300)},
+    saveInspection(d){const pre='L'+d.InspectDate.slice(2,4)+d.InspectDate.slice(5,7)+'-';cnt[pre]=(cnt[pre]||0)+1;const r=Object.assign({},d,{ID:'d'+(id++),LotNo:d.LotNo||pre+String(cnt[pre]).padStart(4,'0'),InspectDate:d.InspectDate+' 00:00',CreatedAt:new Date().toISOString().slice(0,16).replace('T',' '),CreatedBy:'demo'});insp.push(r);
+      let c='';if(d.autoCapa){c=this.saveCapa({LotNo:r.LotNo,Issue:'Reject: '+(d.DefectType||'-'),Owner:d.Inspector}).CapaNo}return{ok:true,LotNo:r.LotNo,CapaNo:c}},
+    updateInspection(id,f){Object.assign(insp.find(r=>r.ID===id),f);return{ok:true}},
+    deleteInspection(id){insp.splice(insp.findIndex(r=>r.ID===id),1);return{ok:true}},
+    saveCapa(d){if(d.CapaNo){const c=capa.find(x=>x.CapaNo===d.CapaNo);if(c){Object.assign(c,d);return{ok:true,CapaNo:c.CapaNo}}}if(!d.Issue)throw new Error('ระบุปัญหาที่พบก่อนบันทึก CAPA');
+      const no='CAPA-'+ym(now).slice(2).replace('-','')+'-'+String(capa.length+1).padStart(3,'0');capa.push(Object.assign({Status:'Open',DueDate:ymd(new Date(Date.now()+7*864e5))},d,{CapaNo:no}));return{ok:true,CapaNo:no}},
+    updateCapa(no,f){return this.saveCapa(Object.assign({},f,{CapaNo:no}))},
+    saveMaster(o){Object.assign(M,o);return{ok:true,master:M}},
+    saveSettings(s){['rejectAlert','capaDue','dailySummary'].forEach(k=>{if(typeof s[k]==='boolean')settings[k]=s[k]});if(typeof s.notifyEmail==='string')settings.notifyEmail=s.notifyEmail;if(s.teamsWebhook)settings.hasTeams=true;if(s.clearTeams)settings.hasTeams=false;if(s.claudeKey)settings.hasClaudeKey=true;if(s.clearClaudeKey)settings.hasClaudeKey=false;return Object.assign({},settings)},
+    installTriggers(){return 'ตั้งเวลาแล้ว (demo)'},
+    testNotify(){throw new Error('โหมดตัวอย่างส่งข้อความจริงไม่ได้ ใช้งานผ่าน Apps Script เพื่อทดสอบ')},
+    generateSummary(month){const rows=insp.filter(r=>r.InspectDate.slice(0,7)===month);const s=stats(rows),p=stats(insp.filter(r=>r.InspectDate.slice(0,7)===prevYM(month)));const top=Object.entries(s.types).sort((a,b)=>b[1]-a[1]);const oc=capa.filter(c=>c.Status!=='Closed');
+      return{source:'rules',text:[`ภาพรวมเดือน ${month}`,`• ตรวจทั้งหมด ${s.total} รายการ ผ่านเกณฑ์ ${s.rate.toFixed(1)}% (${s.rate>=p.rate?'ดีขึ้น':'ลดลง'} ${Math.abs(s.rate-p.rate).toFixed(1)} จุดจากเดือนก่อน)`,`• รออนุมัติ ${s.hold} รายการ, ไม่ผ่าน ${s.reject} รายการ, Defect rate ${s.dRate.toFixed(2)}%`,'','ปัญหาที่พบบ่อย',...top.slice(0,4).map(t=>`• ${t[0]} ${t[1]} ครั้ง`),top[0]?`ข้อเสนอแนะ: ทบทวนสาเหตุของ “${top[0][0]}” กับผู้รับผิดชอบไลน์และซัพพลายเออร์ก่อน`:'','',`งานที่ต้องติดตาม: CAPA ค้าง ${oc.length} งาน`,...oc.slice(0,5).map(c=>`• ${c.CapaNo} ${c.Issue} — ${c.Owner}, ครบ ${c.DueDate}`)].join('\n')}}
+  };
+})();
+
+/* ============ Init ============ */
+$('logo').innerHTML=logo(38);$('logo2').innerHTML=logo(40);
+paintIcons();renderNav();load();
+</script>
+</body>
+</html>
