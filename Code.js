@@ -111,7 +111,12 @@ function readTable_(name) {
   return out;
 }
 function toRow_(name, obj) {
-  return SHEETS[name].map(function (k) { return (obj[k] === undefined || obj[k] === null) ? '' : safeCell_(obj[k]); });
+  return SHEETS[name].map(function (k) { return sheetValue_(k, obj[k]); });
+}
+function sheetValue_(key, value) {
+  if (value === undefined || value === null || value === '') return '';
+  if (key === 'InspectDate' || key === 'DueDate') return "'" + (value instanceof Date ? fmtD_(value) : String(value).slice(0, 10));
+  return safeCell_(value);
 }
 function findRow_(name, key, val) {
   const s = sh_(name);
@@ -127,7 +132,7 @@ function updateRow_(name, row, fields) {
   const h = SHEETS[name];
   Object.keys(fields).forEach(function (k) {
     const c = h.indexOf(k);
-    if (c >= 0) s.getRange(row, c + 1).setValue(safeCell_(fields[k]));
+    if (c >= 0) s.getRange(row, c + 1).setValue(sheetValue_(k, fields[k]));
   });
 }
 function log_(action, detail) {
@@ -219,7 +224,7 @@ function saveInspection(d) {
     const rec = Object.assign({}, d, {
       ID: Utilities.getUuid().slice(0, 8),
       LotNo: d.LotNo ? String(d.LotNo).trim() : nextLot_(d.InspectDate),
-      InspectDate: parseDate_(d.InspectDate),
+      InspectDate: String(d.InspectDate),
       SampleQty: Number(d.SampleQty) || 0,
       DefectQty: Number(d.DefectQty) || 0,
       CreatedAt: now, CreatedBy: user_(), UpdatedAt: now
@@ -227,7 +232,7 @@ function saveInspection(d) {
     sh_('Inspections').appendRow(toRow_('Inspections', rec));
     log_('ADD_INSPECTION', rec.LotNo + ' ' + rec.Result);
 
-    let capaNo = '';
+    let capaNo = '', warning = '';
     if (rec.Result === 'Reject') {
       if (d.autoCapa) {
         capaNo = createCapa_({
@@ -238,13 +243,14 @@ function saveInspection(d) {
         });
       }
       if (isOn_('rejectAlert')) {
-        notify_('พบผลตรวจไม่ผ่าน ' + rec.LotNo,
+        try { notify_('พบผลตรวจไม่ผ่าน ' + rec.LotNo,
           'ขั้นตอน: ' + rec.Stage + '\nไลน์: ' + (rec.Line || '-') + '\nสินค้า/วัตถุดิบ: ' + (rec.Product || '') + ' ' + (rec.Material || '') +
           '\nปัญหา: ' + (rec.DefectType || '-') + ' (' + rec.DefectQty + '/' + rec.SampleQty + ')\nผู้ตรวจ: ' + (rec.Inspector || '-') +
-          (capaNo ? '\nเปิด CAPA: ' + capaNo : ''));
+          (capaNo ? '\nเปิด CAPA: ' + capaNo : '')); }
+        catch (e) { warning = 'บันทึกแล้ว แต่ส่งแจ้งเตือนไม่สำเร็จ กรุณาตรวจ Automation'; log_('NOTIFY_FAILED', String(e.message || e)); }
       }
     }
-    return { ok: true, ID: rec.ID, LotNo: rec.LotNo, CapaNo: capaNo };
+    return { ok: true, ID: rec.ID, LotNo: rec.LotNo, CapaNo: capaNo, warning: warning };
   });
 }
 
@@ -256,7 +262,7 @@ function updateInspection(id, fields) {
     delete f.ID; delete f.CreatedAt; delete f.CreatedBy;
     const existing = readTable_('Inspections').find(function (r) { return String(r.ID) === String(id); });
     validateInspection_(Object.assign({}, existing, f, { InspectDate: String(f.InspectDate || existing.InspectDate).slice(0, 10) }));
-    if (f.InspectDate) f.InspectDate = parseDate_(f.InspectDate);
+    if (f.InspectDate) { parseDate_(f.InspectDate); f.InspectDate = String(f.InspectDate); }
     f.UpdatedAt = new Date();
     updateRow_('Inspections', row, f);
     log_('UPDATE_INSPECTION', id + ' ' + JSON.stringify(fields));
@@ -294,7 +300,7 @@ function saveCapa(d) {
       if (row > 0) {
         const f = Object.assign({}, d);
         delete f.CapaNo; delete f.CreatedAt;
-        if (f.DueDate) f.DueDate = parseDate_(f.DueDate);
+        if (f.DueDate) { parseDate_(f.DueDate); f.DueDate = String(f.DueDate); }
         if (f.Status === 'Closed') f.ClosedAt = new Date();
         else if (f.Status) f.ClosedAt = '';
         updateRow_('CAPA', row, f);
@@ -320,7 +326,7 @@ function createCapa_(d) {
   const status = d.Status || 'Open';
   const rec = Object.assign({}, d, {
     CapaNo: no,
-    DueDate: d.DueDate ? parseDate_(d.DueDate) : new Date(Date.now() + CONFIG.CAPA_DUE_DAYS * 864e5),
+    DueDate: d.DueDate instanceof Date ? fmtD_(d.DueDate) : d.DueDate ? (parseDate_(d.DueDate), String(d.DueDate)) : fmtD_(new Date(Date.now() + CONFIG.CAPA_DUE_DAYS * 864e5)),
     Status: status,
     CreatedAt: new Date(),
     ClosedAt: status === 'Closed' ? new Date() : ''

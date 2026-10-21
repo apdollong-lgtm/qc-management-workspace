@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+[hidden]{display:none!important}
 :root{
   --bg:#FAF6F1;--card:#FFFFFF;--line:#EEE6DC;--ink:#211C17;--mute:#7B7068;
   --brand:#CF6136;--brand2:#B4502A;--brandSoft:#FBEDE5;
@@ -612,7 +613,7 @@ $('recForm').addEventListener('submit',async e=>{
   if(+d.DefectQty>0&&!d.DefectType)return toast('เลือกประเภทปัญหาเมื่อพบของเสีย',1);
   const b=$('recSave');b.disabled=true;loading(true);
   try{const r=await api('saveInspection',d);toast(`บันทึกผลตรวจแล้ว ${r.LotNo}${r.CapaNo?' · เปิด '+r.CapaNo:''}`);
-    e.target.reset();S.result='Pass';$('rDate').value=ymd(new Date());await load()}
+    e.target.reset();S.result='Pass';$('rDate').value=ymd(new Date());await load();if(r.warning)toast(r.warning,1)}
   catch(err){toast('บันทึกไม่สำเร็จ: '+errMsg(err),1)}
   b.disabled=false;loading(false);
 });

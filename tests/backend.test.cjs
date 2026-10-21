@@ -39,3 +39,17 @@ test('frontend inline scripts parse', () => {
   const html = fs.readFileSync('Index.html', 'utf8');
   for (const [,src] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(src);
 });
+test('notification failure after save must not suggest retrying an already saved inspection', () => {
+  let saved = 0;
+  const c = app({Utilities:{getUuid:()=> 'test-uuid'}});
+  c.withLock_ = fn => fn(); c.sh_ = () => ({appendRow:()=>saved++});
+  c.log_ = () => {}; c.user_ = () => 'owner'; c.isOn_ = () => true;
+  c.notify_ = () => {throw Error('mail quota');};
+  const result = c.saveInspection({LotNo:'QA', InspectDate:'2026-10-21', Stage:'Incoming', Result:'Reject', SampleQty:10, DefectQty:1});
+  assert.equal(result.ok, true); assert.equal(saved, 1); assert.match(result.warning, /บันทึกแล้ว/);
+});
+test('calendar fields force text storage so spreadsheet time zone cannot shift the day', () => {
+  const c = app();
+  assert.equal(c.sheetValue_('InspectDate','2026-10-21'), "'2026-10-21");
+  assert.equal(c.sheetValue_('DueDate','2026-11-01'), "'2026-11-01");
+});

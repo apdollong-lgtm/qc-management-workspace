@@ -1,4 +1,8 @@
-# Remotion video
+# QC Installation Tutorial — 128 seconds, 1920×1080, 30 fps
+
+Thai text tutorial with animated motion graphics, seven installation steps. No narration or music.
+Run `npm ci` then `npm run dev -- --no-open` and open the Studio URL.
+Composition: `QCInstallation`. To export when needed: `npx remotion render src/index.ts QCInstallation out/qc-installation.mp4`.
 
 <p align="center">
   <a href="https://github.com/remotion-dev/logo">
