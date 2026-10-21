@@ -716,7 +716,7 @@ async function runSummary(inPage){
 function exportCSV(rows,name){
   if(!rows||!rows.length)return toast('ไม่มีข้อมูลให้ส่งออก',1);
   const cols=['LotNo','InspectDate','Stage','Line','Product','Material','Supplier','Inspector','SampleQty','DefectQty','DefectType','Result','Note'];
-  const csv='\ufeff'+cols.join(',')+'\n'+rows.map(r=>cols.map(c=>`"${String(r[c]==null?'':r[c]).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv='\ufeff'+cols.join(',')+'\n'+rows.map(r=>cols.map(c=>{let v=String(r[c]==null?'':r[c]);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return `"${v.replace(/"/g,'""')}"`}).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=name+'.csv';a.click();toast('ส่งออก CSV แล้ว');
 }
 

@@ -1,0 +1,8 @@
+node_modules/
+video/node_modules/
+video/out/
+.clasprc.json
+.env
+.env.*
+release/
+catalog-integration/

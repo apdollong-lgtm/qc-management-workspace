@@ -1,0 +1,33 @@
+name: Test and sync QC to FactoryStudio Catalog
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: qc-catalog-main
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm test
+      - run: npm ci
+        working-directory: video
+      - run: npx tsc --noEmit
+        working-directory: video
+      - run: python scripts/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qc-workspace-source
+          path: release/qc-workspace-source.zip
+      - run: node scripts/catalog-sync.mjs

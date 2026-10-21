@@ -1,0 +1,6 @@
+{
+  "name": "qc-management-workspace",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {"test": "node --test tests/backend.test.cjs"}
+}

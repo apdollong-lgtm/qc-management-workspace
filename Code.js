@@ -58,7 +58,10 @@ function onOpen() {
 function tz_() { return Session.getScriptTimeZone() || 'Asia/Bangkok'; }
 function props_() { return PropertiesService.getScriptProperties(); }
 function ss_() {
-  return CONFIG.SPREADSHEET_ID ? SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  const id = props_().getProperty('SPREADSHEET_ID') || CONFIG.SPREADSHEET_ID;
+  const book = id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
+  if (!book) throw new Error('กรุณา Run setup จาก Apps Script ที่ผูกกับ Google Sheet ก่อนใช้งาน');
+  return book;
 }
 function sh_(name) {
   const ss = ss_();
@@ -73,9 +76,20 @@ function sh_(name) {
 }
 function fmtD_(d, p) { return Utilities.formatDate(d, tz_(), p || 'yyyy-MM-dd'); }
 function parseDate_(v) {
-  if (v instanceof Date) return v;
-  const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date();
+  if (v instanceof Date && !isNaN(v.getTime())) return v;
+  const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) throw new Error('วันที่ต้องเป็น YYYY-MM-DD');
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  if (d.getFullYear() !== +m[1] || d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) throw new Error('วันที่ไม่ถูกต้อง');
+  return d;
+}
+function safeCell_(v) { return typeof v === 'string' && /^[=+\-@\t\r]/.test(v) ? "'" + v : v; }
+function validateInspection_(d) {
+  parseDate_(d.InspectDate);
+  if (['Incoming', 'In-process', 'Final'].indexOf(d.Stage) < 0) throw new Error('ขั้นตอนการตรวจไม่ถูกต้อง');
+  if (['Pass', 'Hold', 'Reject'].indexOf(d.Result) < 0) throw new Error('ผลการตรวจไม่ถูกต้อง');
+  const sample = Number(d.SampleQty), defect = Number(d.DefectQty);
+  if (!Number.isSafeInteger(sample) || sample < 1 || !Number.isSafeInteger(defect) || defect < 0 || defect > sample) throw new Error('จำนวนตัวอย่างต้องเป็นจำนวนเต็มมากกว่า 0 และของเสียต้องไม่เกินตัวอย่าง');
 }
 function cell_(x) { return x instanceof Date ? fmtD_(x, 'yyyy-MM-dd HH:mm') : x; }
 function user_() { return Session.getActiveUser().getEmail() || 'unknown'; }
@@ -97,7 +111,7 @@ function readTable_(name) {
   return out;
 }
 function toRow_(name, obj) {
-  return SHEETS[name].map(function (k) { return (obj[k] === undefined || obj[k] === null) ? '' : obj[k]; });
+  return SHEETS[name].map(function (k) { return (obj[k] === undefined || obj[k] === null) ? '' : safeCell_(obj[k]); });
 }
 function findRow_(name, key, val) {
   const s = sh_(name);
@@ -113,7 +127,7 @@ function updateRow_(name, row, fields) {
   const h = SHEETS[name];
   Object.keys(fields).forEach(function (k) {
     const c = h.indexOf(k);
-    if (c >= 0) s.getRange(row, c + 1).setValue(fields[k]);
+    if (c >= 0) s.getRange(row, c + 1).setValue(safeCell_(fields[k]));
   });
 }
 function log_(action, detail) {
@@ -132,6 +146,7 @@ function prevMonth_(m) {
 /* ---------------- Setup ---------------- */
 
 function setup() {
+  props_().setProperty('SPREADSHEET_ID', ss_().getId());
   Object.keys(SHEETS).forEach(sh_);
   const m = sh_('Master');
   if (m.getLastRow() < 2) {
@@ -198,6 +213,7 @@ function getMaster() {
 function saveInspection(d) {
   return withLock_(function () {
     if (!d || !d.InspectDate || !d.Stage || !d.Result) throw new Error('กรอกวันที่ ขั้นตอนการตรวจ และผลการตรวจให้ครบ');
+    validateInspection_(d);
     if (['Pass', 'Hold', 'Reject'].indexOf(d.Result) < 0) throw new Error('ผลการตรวจต้องเป็น Pass, Hold หรือ Reject');
     const now = new Date();
     const rec = Object.assign({}, d, {
@@ -238,6 +254,8 @@ function updateInspection(id, fields) {
     if (row < 0) throw new Error('ไม่พบรายการตรวจนี้ อาจถูกลบไปแล้ว');
     const f = Object.assign({}, fields);
     delete f.ID; delete f.CreatedAt; delete f.CreatedBy;
+    const existing = readTable_('Inspections').find(function (r) { return String(r.ID) === String(id); });
+    validateInspection_(Object.assign({}, existing, f, { InspectDate: String(f.InspectDate || existing.InspectDate).slice(0, 10) }));
     if (f.InspectDate) f.InspectDate = parseDate_(f.InspectDate);
     f.UpdatedAt = new Date();
     updateRow_('Inspections', row, f);
@@ -269,6 +287,8 @@ function nextLot_(dateStr) {
 
 function saveCapa(d) {
   return withLock_(function () {
+    if (!d) throw new Error('กรุณาระบุข้อมูล CAPA');
+    if (d.Status && ['Open', 'In progress', 'Closed'].indexOf(d.Status) < 0) throw new Error('สถานะ CAPA ไม่ถูกต้อง');
     if (d.CapaNo) {
       const row = findRow_('CAPA', 'CapaNo', d.CapaNo);
       if (row > 0) {
@@ -281,6 +301,7 @@ function saveCapa(d) {
         log_('UPDATE_CAPA', d.CapaNo);
         return { ok: true, CapaNo: d.CapaNo };
       }
+      throw new Error('ไม่พบ CAPA นี้ อาจถูกลบไปแล้ว');
     }
     if (!d.Issue) throw new Error('ระบุปัญหาที่พบก่อนบันทึก CAPA');
     return { ok: true, CapaNo: createCapa_(d) };
@@ -313,12 +334,13 @@ function createCapa_(d) {
 
 function saveMaster(obj) {
   return withLock_(function () {
-    const s = sh_('Master');
-    if (s.getLastRow() > 1) s.getRange(2, 1, s.getLastRow() - 1, 2).clearContent();
+    if (!obj || Object.keys(obj).some(function (t) { return !Object.prototype.hasOwnProperty.call(DEFAULT_MASTER, t) || !Array.isArray(obj[t]); })) throw new Error('ข้อมูลหลักไม่ถูกต้อง');
     const rows = [];
     Object.keys(obj).forEach(function (t) {
-      (obj[t] || []).forEach(function (v) { v = String(v).trim(); if (v) rows.push([t, v]); });
+      obj[t].forEach(function (v) { v = String(v).trim(); if (v) rows.push([t, safeCell_(v)]); });
     });
+    const s = sh_('Master');
+    if (s.getLastRow() > 1) s.getRange(2, 1, s.getLastRow() - 1, 2).clearContent();
     if (rows.length) s.getRange(2, 1, rows.length, 2).setValues(rows);
     log_('SAVE_MASTER', rows.length + ' rows');
     return { ok: true, master: getMaster() };
