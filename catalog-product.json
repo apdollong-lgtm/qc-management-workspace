@@ -4,13 +4,13 @@
   "nameTh": "QC Management Workspace — ระบบควบคุมคุณภาพ",
   "code": "FS-QC-WORKSPACE",
   "category": "Quality Control",
-  "description": "ระบบ QC ติดตั้งใน Google Sheets และ Apps Script ของผู้ซื้อ สำหรับ Incoming, In-process, Final, Dashboard, Lot Traceability, CAPA และ CSV พร้อมคู่มือไทยและต้นฉบับวิดีโอ Remotion แนวนอน 128 วินาที รุ่นเจ้าของบัญชีเดียว ต้องตรวจรับบนบัญชีผู้ติดตั้งก่อนใช้ข้อมูลจริง ไม่รวม MP4 หรือเสียงพากย์",
+  "description": "ระบบ QC ติดตั้งใน Google Sheets และ Apps Script ของผู้ซื้อ สำหรับ Incoming, In-process, Final, Dashboard, Lot Traceability, CAPA และ CSV พร้อมคู่มือไทย ต้นฉบับ Remotion และ MP4 สอนติดตั้งแนวนอน 1080p ความยาว 2 นาที 16 วินาที พร้อมเสียงพากย์สังเคราะห์ภาษาไทยและ motion graphic ให้ผู้ซื้อดาวน์โหลด รุ่นเจ้าของบัญชีเดียว ต้องตรวจรับบนบัญชีผู้ติดตั้งก่อนใช้ข้อมูลจริง",
   "version": "1.1.0",
   "status": "Beta",
   "language": "Thai / Google Apps Script / HTML / Remotion",
   "accent": "#bde88a",
   "tags": ["QC", "CAPA", "Google Sheets"],
-  "features": ["Incoming / In-process / Final inspection", "Dashboard and CSV", "Lot Traceability and CAPA", "Thai installation guide", "128-second landscape Remotion tutorial source"],
+  "features": ["Incoming / In-process / Final inspection", "Dashboard and CSV", "Lot Traceability and CAPA", "Thai installation guide", "1080p landscape MP4 with Thai synthetic narration and motion graphics", "Editable Remotion source with all seven narration tracks"],
   "requirements": ["Google account and Google Sheets", "Single owner account; no role separation", "Apps Script authorization", "Optional Claude/Teams configured separately"],
   "demoUrl": null
 }

@@ -26,8 +26,11 @@ jobs:
       - run: npx tsc --noEmit
         working-directory: video
       - run: python scripts/package.py
+      - name: Render narrated installation video
+        run: npx remotion render src/index.ts QCInstallation ../release/qc-installation-th.mp4 --codec=h264 --crf=20 --concurrency=2
+        working-directory: video
       - uses: actions/upload-artifact@v4
         with:
           name: qc-workspace-source
-          path: release/qc-workspace-source.zip
+          path: release/
       - run: node scripts/catalog-sync.mjs

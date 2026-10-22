@@ -1,8 +1,9 @@
-# QC Installation Tutorial — 128 seconds, 1920×1080, 30 fps
+# QC Installation Tutorial — 136.4 seconds, 1920×1080, 30 fps
 
-Thai text tutorial with animated motion graphics, seven installation steps. No narration or music.
+Thai tutorial with motion graphics and synthetic Thai narration across seven installation steps. Voice: installed Microsoft Pattara (Windows), not a human voice recording. No music.
 Run `npm ci` then `npm run dev -- --no-open` and open the Studio URL.
-Composition: `QCInstallation`. To export when needed: `npx remotion render src/index.ts QCInstallation out/qc-installation.mp4`.
+Composition: `QCInstallation`. Export: `npx remotion render src/index.ts QCInstallation out/qc-installation-th.mp4 --codec=h264 --crf=20`.
+The `public/narration/` MP3 files are included for offline playback and rendering; no speech service account is required. `narration-th.json` holds the editable script. Scene lengths are in `src/narration-timing.json`.
 
 <p align="center">
   <a href="https://github.com/remotion-dev/logo">

@@ -30,7 +30,8 @@
 ผู้ซื้อที่ติดตั้งสำเนาเองต้องเลือกอัปเดตเอง การ push ของผู้ขายไม่แก้ Script ของผู้ซื้อโดยอัตโนมัติ
 
 สำหรับผู้ขาย: `npm test` ตรวจ regression; `video/` คือต้นฉบับวิดีโอ Remotion แนวนอน
-workflow catalog-sync ทำงานเมื่อ push main และเผยแพร่ package/metadata ไป FactoryStudio ผ่าน GitHub OIDC เฉพาะ repository นี้
+workflow catalog-sync ทำงานเมื่อ push main แล้วสร้าง MP4 พร้อมเสียงพากย์ไทยและเผยแพร่ package/video/metadata ไป FactoryStudio ผ่าน GitHub OIDC เฉพาะ repository นี้
+ผู้ซื้อดาวน์โหลด MP4 สอนติดตั้งแนวนอน 1080p ความยาว 2 นาที 16 วินาทีพร้อมเสียงพากย์สังเคราะห์ไทยได้จากหน้าสินค้า ต้นฉบับ Remotion และไฟล์เสียงแต่ละฉากอยู่ใน ZIP ด้วย
 
 ## ตรวจรับก่อนใช้ข้อมูลจริง
 

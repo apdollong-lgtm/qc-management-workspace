@@ -13,11 +13,15 @@ async function api(method,headers,body){
  if(!response.ok) throw Error(`Catalog ${method}: ${response.status} ${await response.text()}`);
  return response.json();
 }
+async function uploadAsset(fileName,type,label,contentType){
+ const file=await fs.readFile(`release/${fileName}`);
+ const headers={'Content-Type':contentType,'X-Product-Slug':product.slug,'X-Release-Version':product.version,'X-Asset-Type':type,'X-Asset-Label':label,'X-File-Name':fileName,'X-File-Size':String(file.length)};
+ const {upload}=await api('POST',headers);
+ const result=await fetch(upload.uploadUrl,{method:'PUT',headers:{'Content-Type':contentType},body:file});
+ if(!result.ok) throw Error(`Upload failed: ${result.status}`);
+ await api('PATCH',{...headers,'X-Upload-Id':upload.id,'X-Upload-Key':upload.key});
+}
+await uploadAsset('qc-workspace-source.zip','package','QC source, Thai manual and narrated Remotion tutorial source','application/zip');
+await uploadAsset('qc-installation-th.mp4','video','QC installation tutorial - Thai narration - 1080p','video/mp4');
 await api('PUT',{'Content-Type':'application/json','X-Product-Slug':product.slug},JSON.stringify(product));
-const file=await fs.readFile('release/qc-workspace-source.zip');
-const headers={'Content-Type':'application/zip','X-Product-Slug':product.slug,'X-Release-Version':product.version,'X-Asset-Type':'package','X-Asset-Label':'QC source, Thai manual and Remotion tutorial source','X-File-Name':'qc-workspace-source.zip','X-File-Size':String(file.length)};
-const {upload}=await api('POST',headers);
-const result=await fetch(upload.uploadUrl,{method:'PUT',headers:{'Content-Type':'application/zip'},body:file});
-if(!result.ok) throw Error(`Upload failed: ${result.status}`);
-await api('PATCH',{...headers,'X-Upload-Id':upload.id,'X-Upload-Key':upload.key});
 console.log(`Catalog synced: ${product.slug} ${product.version}`);

@@ -6,3 +6,5 @@ video/out/
 .env.*
 release/
 catalog-integration/
+.tts-runtime/
+video/public/narration/*.wav
