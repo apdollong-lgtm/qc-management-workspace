@@ -1,10 +1,12 @@
 import React from 'react';
+import '@fontsource/ibm-plex-sans-thai/400.css';
+import '@fontsource/ibm-plex-sans-thai/700.css';
 import {AbsoluteFill, Composition, Series, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {Audio} from '@remotion/media';
 import timings from './narration-timing.json';
 const Step: React.FC<{number:string; title:string; lines:string[]; code:string; audio:string}> = ({number,title,lines,code,audio}) => {
  const frame=useCurrentFrame(); const {fps}=useVideoConfig(); const enter=spring({frame,fps,config:{damping:200}});
- return <AbsoluteFill style={{background:'#161c1a',color:'#faf7ed',fontFamily:'Tahoma, sans-serif',padding:90}}>
+ return <AbsoluteFill style={{background:'#161c1a',color:'#faf7ed',fontFamily:'IBM Plex Sans Thai, Tahoma, sans-serif',padding:90}}>
  <Audio src={staticFile(audio)} from={Math.round(.35*fps)} premountFor={fps}/>
  <div style={{position:'absolute',width:760,height:760,borderRadius:'50%',background:'#bde88a',opacity:.045,right:-180,top:-280,scale:1+Math.sin(frame/80)*.08}}/>
  <div style={{display:'flex',justifyContent:'space-between',fontSize:25,letterSpacing:3,color:'#bde88a'}}><b>FACTORY STUDIO / QC WORKSPACE</b><span>INSTALLATION GUIDE · 1.1.0</span></div>
